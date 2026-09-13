@@ -1,0 +1,121 @@
+name: 21-meter-ledger
+x-app: &app
+  build:
+    context: .
+    target: runtime
+  init: true
+  restart: unless-stopped
+x-environment: &environment
+  DATABASE_URL: postgresql+asyncpg://billing:billing@database:5432/billing
+  RABBITMQ_URL: amqp://billing:billing@rabbitmq:5672/
+  ADMIN_TOKEN: ${ADMIN_TOKEN:-local-demo-meterledger-admin-change-before-deployment}
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: local-demo-postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/bootstrap.sql:/docker-entrypoint-initdb.d/bootstrap.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    restart: unless-stopped
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: billing
+      RABBITMQ_DEFAULT_PASS: billing
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 40
+    restart: unless-stopped
+  migrate:
+    <<: *app
+    restart: "no"
+    environment:
+      <<: *environment
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://billing_owner:billing_owner@database:5432/billing
+    command: ["sh", "-c", "alembic upgrade head && python -m meterledger.seed"]
+    depends_on:
+      database:
+        condition: service_healthy
+  api:
+    <<: *app
+    environment: *environment
+    ports: ["127.0.0.1:8210:8000"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  worker:
+    <<: *app
+    environment:
+      <<: *environment
+      WORKER_BEFORE_COMMIT_DELAY: ${WORKER_BEFORE_COMMIT_DELAY:-0}
+    command: ["python", "-m", "meterledger.messaging", "worker"]
+    depends_on:
+      api:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "scripts/worker_health.py", "worker"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  dispatcher:
+    <<: *app
+    environment:
+      <<: *environment
+      DISPATCHER_AFTER_PUBLISH_DELAY: ${DISPATCHER_AFTER_PUBLISH_DELAY:-0}
+    command: ["python", "-m", "meterledger.messaging", "dispatcher"]
+    depends_on:
+      api:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "scripts/worker_health.py", "dispatcher"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  test-db:
+    image: postgres:17-alpine
+    profiles: ["test"]
+    environment:
+      POSTGRES_PASSWORD: local-test-postgres
+    volumes:
+      - ./infra/bootstrap.sql:/docker-entrypoint-initdb.d/bootstrap.sql:ro
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+  test:
+    build:
+      context: .
+      target: test
+    profiles: ["test"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://billing:billing@test-db:5432/billing
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://billing_owner:billing_owner@test-db:5432/billing
+      TESTING: "true"
+    depends_on:
+      test-db:
+        condition: service_healthy
+    init: true
+volumes:
+  postgres_data:
+  rabbitmq_data:

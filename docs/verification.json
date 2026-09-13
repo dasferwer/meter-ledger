@@ -1,0 +1,75 @@
+{
+  "project": "MeterLedger",
+  "verified_at": "2026-09-12T23:58:31.844961+00:00",
+  "pytest": {
+    "passed": 39,
+    "database": "isolated PostgreSQL 17, real transactions and roles"
+  },
+  "smoke": {
+    "ok": true,
+    "concurrent_duplicate_requests": 30,
+    "distinct_events": 1,
+    "original_invoice_unchanged": true,
+    "late_event_zero_cent_adjustment": true,
+    "credit_cents": -1,
+    "replayed_invoices": 3,
+    "unchanged_period_reused": true,
+    "invoice_completion_ms": 118.57,
+    "read_requests": 50,
+    "read_p50_ms": 1.85,
+    "read_p95_ms": 2.39
+  },
+  "recovery": {
+    "ok": true,
+    "scenarios": {
+      "broker_outage_preserves_usage_and_invoice_request": true,
+      "worker_killed_before_commit_rolls_back_and_recovers": true,
+      "publisher_confirm_crash_gap_does_not_duplicate_invoice": true
+    }
+  },
+  "runtime": {
+    "uid": 999,
+    "python": "3.12.14",
+    "architecture": "aarch64",
+    "pytest": false,
+    "ruff": false
+  },
+  "runtime_source_parity": true,
+  "source_sha256": {
+    "auth.py": "611ad033d64272e5da1d1dea7eb4b36168551e3e8598ef7c70ad42dc8021502b",
+    "db.py": "52198f30678328629c8a99e36f7823b0e9690db30f35589e1b2b4b8a67ee37f5",
+    "config.py": "4e7d594816c2c50c672177d58e131ecd47435f37e18f7e3a612d1ebfb0c56bed",
+    "billing.py": "655508e798139e68daad7118a3ae3e8c31187d12b99004104d28aa0b953a9e86",
+    "rating.py": "9cd386a429a2286b3ff11dd5b32ee21f322c9b525ee48f4cab3bf79c1a5ebeec",
+    "ledger.py": "fbc90de2bd5b0ebd1181c309ce5cc8acec46ce4b114e40bf60bdafc64177aac7",
+    "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "seed.py": "da7eecfe94d6cbee7b3fcda12acefb88b44f0ab270fdf3208620e2c60c0562c8",
+    "schemas.py": "2430e455f51b61d96fa3433b6dd131300810baca8cce50874baf8c3b0889d38d",
+    "main.py": "0751ff149bf6eac1a003ed13fa919dd0013f032e8aa067c6cce46fc283672b18",
+    "messaging.py": "9f89804476335de2f85164b4d75d59c11adcb4af79ab37bed7b2a1a64cbc175a"
+  },
+  "openapi_matches_live_api": true,
+  "metrics_http_verified": true,
+  "repeat_seed_preserved_history": true,
+  "history_hashes": {
+    "tenants": "5458e7abd05ec9be50f5a3da58ee52ff",
+    "rates": "e07485184252c9a1ace15c225882e39e",
+    "events": "292d97aab63ae575ca48776105e40c24",
+    "invoices": "f9db5cbbe9bcde0aa11f600b6aa6473f",
+    "jobs": "4e9c8a674fa5ad7aab7a69aa1de3af8d"
+  },
+  "healthy_services": [
+    "api",
+    "database",
+    "dispatcher",
+    "rabbitmq",
+    "worker"
+  ],
+  "only_current_portfolio_stack_running": true,
+  "test_database_stopped": true,
+  "host": {
+    "system": "Darwin",
+    "architecture": "arm64"
+  },
+  "remote_ci": "Not run. Local repository has not been published."
+}
