@@ -71,5 +71,5 @@
     "system": "Darwin",
     "architecture": "arm64"
   },
-  "remote_ci": "Not run. Local repository has not been published."
+  "remote_ci": "Local verification snapshot before publication. Published checks: https://github.com/dasferwer/meter-ledger/actions/workflows/ci.yml"
 }
