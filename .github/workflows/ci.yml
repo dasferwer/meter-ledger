@@ -9,7 +9,10 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --extra dev --frozen
       - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run pytest --noconftest -p no:cacheprovider tests/test_fixture_safety.py
       - run: make test
+      - name: Проверка защиты тестового образа
+        run: uv run pytest -q scripts/test_test_entrypoint.py
       - run: make up
       - run: make smoke
       - run: make recovery

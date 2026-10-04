@@ -1,7 +1,17 @@
+# ruff: noqa: E402
+import pytest
+
+from meterledger.test_safety import UnsafeTestEnvironment, ensure_test_environment
+
+# Проверяем окружение раньше settings/engine и регистрации любых fixtures.
+try:
+    ensure_test_environment()
+except UnsafeTestEnvironment as exc:
+    raise pytest.UsageError(str(exc)) from None
+
 import os
 
 import httpx
-import pytest
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from meterledger.auth import key_hash
